@@ -103,6 +103,26 @@ body {
   45%  { transform: scale(1.2); }
   60%  { transform: scale(1); }
 }
+/* Sync indicator */
+.sync-indicator {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  margin-left: 8px; vertical-align: middle;
+  background: #ccc; transition: background 0.4s ease;
+}
+.sync-indicator.synced { background: #4caf50; }
+.sync-indicator.syncing { background: #ff9800; animation: pulse-sync 0.8s ease-in-out infinite; }
+.sync-indicator.error { background: #e74c3c; }
+@keyframes pulse-sync {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.sync-status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; }
+.sync-status-dot.synced { background: #4caf50; }
+.sync-status-dot.syncing { background: #ff9800; animation: pulse-sync 0.8s infinite; }
+.sync-status-dot.error { background: #e74c3c; }
+.sync-status-dot.idle { background: #ccc; }
+.sync-status-text { font-size: 0.72rem; font-weight: 400; color: var(--muted); }
+.settings-divider { height: 1px; background: var(--border); margin: 0.8rem 0 1.5rem; }
 .top-nav .nav-actions { display: flex; gap: 1.2rem; align-items: center; }
 .top-nav .nav-btn {
   background: none; border: none;
@@ -762,8 +782,9 @@ footer .footer-heart { color: var(--rose); }
 
 <!-- Top navigation -->
 <nav class="top-nav" id="topNav">
-  <div class="brand"><span class="heart-icon">💕</span>我们的故事</div>
+  <div class="brand"><span class="heart-icon">💕</span>我们的故事<span class="sync-indicator" id="syncIndicator" title="同步状态"></span></div>
   <div class="nav-actions">
+    <button class="nav-btn" id="btnSync" title="手动同步" style="font-size:0.95rem">🔄</button>
     <button class="nav-btn" id="btnSettings" title="设置">⚙️</button>
     <button class="nav-btn" id="btnExport" title="导出数据">📥</button>
     <button class="nav-btn" id="btnImport" title="导入数据">📤</button>
@@ -991,6 +1012,18 @@ footer .footer-heart { color: var(--rose); }
       <div class="form-group">
         <label>纪念日</label>
         <input type="date" id="settingsStartDate" required>
+      </div>
+      <div class="settings-divider"></div>
+      <div class="form-group">
+        <label>☁️ 云端同步 <span class="sync-status-dot" id="syncStatusDot"></span> <span class="sync-status-text" id="syncStatusText"></span></label>
+        <label class="checkbox-row" style="margin-bottom:0.5rem">
+          <input type="checkbox" id="settingsSyncEnabled">
+          <span>开启 GitHub 自动同步</span>
+        </label>
+        <input type="password" id="settingsGithubToken" placeholder="粘贴 GitHub Token（只存本地）" style="margin-top:0.4rem">
+        <p class="setup-hint" style="margin-top:0.4rem;text-align:left">
+          需要创建 GitHub fine-grained token，权限选 Contents: Read and write。<br>Token 只存在你的浏览器里，不会上传到任何地方。
+        </p>
       </div>
       <div class="form-actions">
         <button type="button" class="btn btn-ghost" id="btnSettingsCancel">取消</button>
@@ -1598,6 +1631,9 @@ $('#btnSettings').addEventListener('click', () => {
   $('#settingsPartner1').value = appData.partner1 || '';
   $('#settingsPartner2').value = appData.partner2 || '';
   $('#settingsStartDate').value = appData.startDate || '';
+  $('#settingsSyncEnabled').checked = getSyncEnabled();
+  $('#settingsGithubToken').value = getGithubToken() || '';
+  updateSyncStatusUI();
   openModal('#settingsModalOverlay');
 });
 $('#btnSettingsClose').addEventListener('click', () => closeModal('#settingsModalOverlay'));
@@ -1610,10 +1646,19 @@ $('#settingsForm').addEventListener('submit', function(e) {
   appData.partner1 = $('#settingsPartner1').value.trim();
   appData.partner2 = $('#settingsPartner2').value.trim();
   appData.startDate = $('#settingsStartDate').value;
+  setSyncEnabled($('#settingsSyncEnabled').checked);
+  const token = $('#settingsGithubToken').value.trim();
+  if (token) setGithubToken(token);
   saveData(appData);
   closeModal('#settingsModalOverlay');
   updateDaysCounter();
-  showToast('设置已更新 ✨');
+  updateSyncStatusUI();
+  if (getSyncEnabled() && getGithubToken()) {
+    syncPush();
+    showToast('设置已保存，正在同步 ☁️');
+  } else {
+    showToast('设置已更新 ✨');
+  }
 });
 
 /* ==========================================================
@@ -1681,6 +1726,203 @@ $('#importFileInput').addEventListener('change', function() {
 });
 
 /* ==========================================================
+   CLOUD SYNC (GitHub)
+   ============================================================ */
+const SYNC_TOKEN_KEY = 'our-story-sync-token';
+const SYNC_ENABLED_KEY = 'our-story-sync-enabled';
+const SYNC_FILE_PATH = 'our-story-data.json';
+const GITHUB_API = 'https://api.github.com/repos/Lyb07-19/liyubo-portfolio/contents/' + SYNC_FILE_PATH;
+const GITHUB_RAW = 'https://raw.githubusercontent.com/Lyb07-19/liyubo-portfolio/main/' + SYNC_FILE_PATH;
+
+let syncState = { status: 'idle', lastSync: null, message: '' };
+
+function getGithubToken() {
+  try { return localStorage.getItem(SYNC_TOKEN_KEY) || ''; } catch(e) { return ''; }
+}
+function setGithubToken(t) {
+  try { localStorage.setItem(SYNC_TOKEN_KEY, t); } catch(e) {}
+}
+function getSyncEnabled() {
+  try { return localStorage.getItem(SYNC_ENABLED_KEY) === 'true'; } catch(e) { return false; }
+}
+function setSyncEnabled(v) {
+  try { localStorage.setItem(SYNC_ENABLED_KEY, v ? 'true' : 'false'); } catch(e) {}
+}
+
+function updateSyncStatusUI() {
+  const indicator = $('#syncIndicator');
+  const statusDot = $('#syncStatusDot');
+  const statusText = $('#syncStatusText');
+  if (!indicator) return;
+
+  const enabled = getSyncEnabled();
+  const hasToken = !!getGithubToken();
+
+  if (!enabled || !hasToken) {
+    indicator.className = 'sync-indicator';
+    if (statusDot) statusDot.className = 'sync-status-dot idle';
+    if (statusText) statusText.textContent = '未开启';
+    return;
+  }
+
+  indicator.className = 'sync-indicator ' + syncState.status;
+  if (statusDot) statusDot.className = 'sync-status-dot ' + syncState.status;
+  const labels = { idle: '待同步', syncing: '同步中...', synced: '已同步', error: '同步失败' };
+  if (statusText) statusText.textContent = syncState.message || labels[syncState.status] || '';
+}
+
+async function fetchRemoteData() {
+  const token = getGithubToken();
+  if (!token || !getSyncEnabled()) return null;
+
+  const resp = await fetch(GITHUB_API, {
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.v3+json' },
+    cache: 'no-store'
+  });
+  if (resp.status === 404) return null; // File doesn't exist yet
+  if (!resp.ok) throw new Error('GitHub fetch failed: ' + resp.status);
+  const file = await resp.json();
+
+  // Decode base64 → binary → UTF-8 → JSON (handles Chinese characters)
+  const binary = atob(file.content.replace(/\n/g, ''));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const raw = new TextDecoder().decode(bytes);
+  const data = JSON.parse(raw);
+  return { data, sha: file.sha };
+}
+
+async function pushToGitHub(data) {
+  const token = getGithubToken();
+  if (!token || !getSyncEnabled()) return;
+
+  // Get current SHA first
+  let sha = null;
+  try {
+    const existing = await fetch(GITHUB_API, {
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.v3+json' },
+      cache: 'no-store'
+    });
+    if (existing.ok) {
+      const file = await existing.json();
+      sha = file.sha;
+    }
+  } catch(e) {}
+
+  const json = JSON.stringify(data, null, 2);
+  // UTF-8 safe base64 encoding for Chinese characters
+  const bytes = new TextEncoder().encode(json);
+  let binary = '';
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  const content = btoa(binary);
+
+  const body = { message: '☁️ 自动同步记忆数据', content };
+  if (sha) body.sha = sha;
+
+  const resp = await fetch(GITHUB_API, {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) throw new Error('GitHub push failed: ' + resp.status);
+}
+
+async function syncPull() {
+  if (!getSyncEnabled() || !getGithubToken()) return;
+  syncState.status = 'syncing';
+  syncState.message = '';
+  updateSyncStatusUI();
+
+  try {
+    const remote = await fetchRemoteData();
+    if (!remote) {
+      syncState.status = 'synced';
+      syncState.message = '云端暂无数据';
+      updateSyncStatusUI();
+      return;
+    }
+
+    const remoteTime = remote.data.lastModified || 0;
+    const localTime = appData.lastModified || 0;
+
+    if (remoteTime > localTime) {
+      // Remote is newer → update local
+      appData = remote.data;
+      if (!appData.memories) appData.memories = [];
+      saveDataLocal(); // Save to localStorage without triggering push
+      updateDaysCounter();
+      renderAll();
+      syncState.status = 'synced';
+      syncState.message = '已从云端更新';
+    } else if (localTime > remoteTime && localTime > 0) {
+      // Local is newer → push to remote
+      await pushToGitHub(appData);
+      syncState.status = 'synced';
+      syncState.message = '已推送到云端';
+    } else {
+      syncState.status = 'synced';
+      syncState.message = '数据一致';
+    }
+    syncState.lastSync = Date.now();
+  } catch(e) {
+    syncState.status = 'error';
+    syncState.message = e.message;
+    console.error('Sync pull error:', e);
+  }
+  updateSyncStatusUI();
+}
+
+async function syncPush() {
+  if (!getSyncEnabled() || !getGithubToken()) return;
+
+  const prevStatus = syncState.status;
+  syncState.status = 'syncing';
+  syncState.message = '';
+  updateSyncStatusUI();
+
+  try {
+    appData.lastModified = Date.now();
+    saveDataLocal(); // Save locally first
+    await pushToGitHub(appData);
+    syncState.status = 'synced';
+    syncState.message = '已同步';
+    syncState.lastSync = Date.now();
+  } catch(e) {
+    syncState.status = 'error';
+    syncState.message = e.message;
+    console.error('Sync push error:', e);
+  }
+  updateSyncStatusUI();
+}
+
+// Local-only save (no push to GitHub)
+function saveDataLocal(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data || appData));
+}
+
+// Override the original saveData to also push
+const originalSaveData = saveData;
+saveData = function(data) {
+  originalSaveData(data);
+  // Auto-sync in background (don't block UI)
+  if (getSyncEnabled() && getGithubToken()) {
+    syncPush().catch(() => {});
+  }
+};
+
+// Manual sync button
+$('#btnSync').addEventListener('click', () => {
+  if (!getSyncEnabled() || !getGithubToken()) {
+    showToast('请先在设置中开启云端同步并填入 Token');
+    return;
+  }
+  syncPull().then(() => {
+    if (syncState.status === 'synced') showToast('同步完成 ☁️');
+    else showToast('同步失败，请检查 Token');
+  });
+});
+
+/* ==========================================================
    KEYBOARD SHORTCUTS
    ============================================================ */
 document.addEventListener('keydown', function(e) {
@@ -1712,6 +1954,7 @@ function init() {
   initScroll();
   initRevealObserver();
   updateDaysCounter();
+  updateSyncStatusUI();
 
   if (isFirstTime()) {
     $('#setupOverlay').classList.remove('hidden');
@@ -1722,6 +1965,11 @@ function init() {
   }
 
   renderAll();
+
+  // Auto-sync from cloud on load (if enabled)
+  if (getSyncEnabled() && getGithubToken()) {
+    syncPull().catch(() => {});
+  }
 
   // Update days counter every minute (for midnight rollover)
   setInterval(updateDaysCounter, 60000);
