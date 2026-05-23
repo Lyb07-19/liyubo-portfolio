@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PawSmart — 智能宠物用品 | 让陪伴更长久</title>
+
+<style>
+/* ============================================================
+   RESET & VARIABLES
+   ============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:       #f8f7f4;
+  --surface:  #ffffff;
+  --text:     #1a1a1a;
+  --muted:    #6b6b6b;
+  --accent:   #e8765b;
+  --accent-dark: #c95d44;
+  --accent-light: #fef0ed;
+  --green:    #3a8c6e;
+  --green-light: #edf7f2;
+  --border:   #e8e5e0;
+  --radius:   14px;
+  --radius-sm: 8px;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.1);
+}
+
+html { scroll-behavior: smooth; background: var(--bg); }
+body {
+  font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   ANNOUNCEMENT BAR
+   ============================================================ */
+.announcement {
+  background: var(--text);
+  color: #fff;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+}
+.announcement span { color: var(--accent); font-weight: 600; }
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(248,247,244,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 clamp(1rem,5vw,4rem);
+  display: flex; justify-content: space-between; align-items: center;
+  height: 64px;
+}
+nav .logo {
+  font-size: 1.25rem; font-weight: 700;
+  letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 8px;
+}
+nav .logo .icon { font-size: 1.5rem; }
+nav .nav-links { display: flex; gap: 2.2rem; list-style: none; align-items: center; }
+nav .nav-links a {
+  color: var(--text); text-decoration: none;
+  font-size: 0.85rem; font-weight: 500;
+  transition: color 0.2s ease;
+}
+nav .nav-links a:hover { color: var(--accent); }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--accent);
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 50px;
+  font-size: 0.9rem; font-weight: 600;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  border: none; cursor: pointer;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 4px 16px rgba(232,118,91,0.3);
+}
+.btn-primary:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(232,118,91,0.4);
+}
+.btn-outline {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent;
+  color: var(--text);
+  padding: 11px 27px;
+  border-radius: 50px;
+  font-size: 0.9rem; font-weight: 600;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.btn-outline:hover { border-color: var(--text); background: var(--surface); }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero {
+  padding: 4rem clamp(1rem,5vw,4rem) 6rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.hero-content { max-width: 540px; }
+.hero-content .badge {
+  display: inline-block;
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 0.78rem; font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 1.5rem;
+}
+.hero-content h1 {
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.2rem;
+}
+.hero-content h1 .highlight {
+  color: var(--accent);
+  position: relative;
+}
+.hero-content .hero-desc {
+  font-size: 1.05rem; color: var(--muted);
+  margin-bottom: 2rem; line-height: 1.8;
+}
+.hero-content .price-block {
+  display: flex; align-items: baseline; gap: 12px;
+  margin-bottom: 2rem;
+}
+.hero-content .price {
+  font-size: 2.4rem; font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hero-content .price-old {
+  font-size: 1.1rem; color: var(--muted);
+  text-decoration: line-through;
+}
+.hero-content .price-save {
+  font-size: 0.82rem; color: var(--green);
+  font-weight: 600;
+  background: var(--green-light);
+  padding: 4px 12px; border-radius: 50px;
+}
+.hero-content .cta-row {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.hero-visual {
+  display: flex; align-items: center; justify-content: center;
+}
+.hero-visual .product-img {
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 1;
+  background: linear-gradient(145deg, #f0ede6, #e8e4dc);
+  border-radius: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10rem;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.04);
+  position: relative;
+  overflow: hidden;
+}
+.hero-visual .product-img::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 30% 35%, rgba(255,255,255,0.5), transparent 60%);
+}
+.hero-visual .product-img .emoji {
+  position: relative; z-index: 1;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.15));
+}
+
+/* ============================================================
+   TRUST BAR
+   ============================================================ */
+.trust-bar {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 2rem clamp(1rem,5vw,4rem);
+  display: flex; justify-content: center; gap: 5rem;
+  flex-wrap: wrap;
+}
+.trust-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.85rem; font-weight: 500; color: var(--muted);
+}
+.trust-item .ticon { font-size: 1.3rem; }
+
+/* ============================================================
+   SECTION HEADER
+   ============================================================ */
+section { padding: 5rem clamp(1rem,5vw,4rem); }
+.section-header {
+  text-align: center; margin-bottom: 3.5rem;
+  max-width: 600px; margin-left: auto; margin-right: auto;
+}
+.section-header .num {
+  font-family: "SF Mono","Cascadia Code",monospace;
+  font-size: 0.72rem; color: var(--accent);
+  letter-spacing: 0.2em; display: block; margin-bottom: 0.6rem;
+}
+.section-header h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+  font-weight: 700; letter-spacing: -0.02em;
+  margin-bottom: 0.8rem;
+}
+.section-header p { color: var(--muted); font-size: 0.95rem; }
+.container { max-width: 1100px; margin: 0 auto; }
+
+/* ============================================================
+   FEATURES GRID
+   ============================================================ */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+.feature-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2.4rem 2rem;
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
+}
+.feature-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+}
+.feature-card .ficon { font-size: 2.4rem; margin-bottom: 1.2rem; display: block; }
+.feature-card h3 {
+  font-size: 1.08rem; font-weight: 600;
+  margin-bottom: 0.6rem; letter-spacing: -0.01em;
+}
+.feature-card p { font-size: 0.88rem; color: var(--muted); line-height: 1.75; }
+
+/* ============================================================
+   HOW IT WORKS
+   ============================================================ */
+.steps-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
+}
+.step-card {
+  text-align: center;
+  padding: 2rem 1.2rem;
+}
+.step-card .step-num {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  font-weight: 700; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1rem;
+}
+.step-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; }
+.step-card p { font-size: 0.82rem; color: var(--muted); }
+
+/* ============================================================
+   PRODUCT SPECS TABS
+   ============================================================ */
+.specs-wrapper {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
+  align-items: center;
+}
+.specs-image {
+  background: linear-gradient(145deg, #f0ede6, #e8e4dc);
+  border-radius: var(--radius);
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8rem;
+  box-shadow: var(--shadow-md);
+}
+.specs-list { display: flex; flex-direction: column; gap: 1.2rem; }
+.spec-item {
+  display: flex; gap: 1rem; align-items: flex-start;
+  padding-bottom: 1.2rem; border-bottom: 1px solid var(--border);
+}
+.spec-item:last-child { border-bottom: none; }
+.spec-item .sicon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+.spec-item h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+.spec-item p { font-size: 0.84rem; color: var(--muted); }
+
+/* ============================================================
+   REVIEWS
+   ============================================================ */
+.reviews-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+}
+.review-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+}
+.review-card .stars { color: #f5a623; font-size: 1rem; margin-bottom: 0.8rem; }
+.review-card .review-text {
+  font-size: 0.9rem; color: var(--text); line-height: 1.8;
+  margin-bottom: 1rem; font-style: italic;
+}
+.review-card .reviewer { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+.review-card .verified {
+  font-size: 0.74rem; color: var(--green);
+  display: flex; align-items: center; gap: 4px; margin-top: 2px;
+}
+
+/* ============================================================
+   PRICING TABLE
+   ============================================================ */
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+  align-items: start;
+}
+.pricing-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2.4rem 2rem;
+  text-align: center;
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
+  position: relative;
+}
+.pricing-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+}
+.pricing-card.featured {
+  border: 2px solid var(--accent);
+  box-shadow: var(--shadow-lg);
+}
+.pricing-card .popular-tag {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: #fff;
+  padding: 4px 18px; border-radius: 50px;
+  font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.pricing-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; }
+.pricing-card .pkg-price {
+  font-size: 2.6rem; font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+.pricing-card .pkg-price span { font-size: 0.9rem; font-weight: 400; color: var(--muted); }
+.pricing-card .pkg-desc { font-size: 0.84rem; color: var(--muted); margin-bottom: 1.5rem; }
+.pricing-card ul {
+  list-style: none; text-align: left;
+  font-size: 0.85rem; margin-bottom: 1.8rem;
+}
+.pricing-card ul li {
+  padding: 6px 0; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.pricing-card ul li::before { content: '✓'; color: var(--green); font-weight: 700; }
+
+/* ============================================================
+   FAQ
+   ============================================================ */
+.faq-list { max-width: 720px; margin: 0 auto; }
+.faq-item {
+  border-bottom: 1px solid var(--border);
+  padding: 1.5rem 0;
+}
+.faq-item summary {
+  font-size: 1rem; font-weight: 600;
+  cursor: pointer; list-style: none;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary .arrow {
+  transition: transform 0.3s ease;
+  font-size: 0.8rem; color: var(--muted);
+}
+.faq-item[open] summary .arrow { transform: rotate(180deg); }
+.faq-item .faq-answer {
+  margin-top: 0.8rem;
+  font-size: 0.9rem; color: var(--muted); line-height: 1.8;
+}
+
+/* ============================================================
+   CTA BANNER
+   ============================================================ */
+.cta-banner {
+  background: var(--text);
+  color: #fff;
+  text-align: center;
+  padding: 4.5rem clamp(1rem,5vw,4rem);
+  border-radius: var(--radius);
+  margin: 0 clamp(1rem,5vw,4rem) 5rem;
+  max-width: 1100px;
+  margin-left: auto; margin-right: auto;
+}
+.cta-banner h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+  font-weight: 700; letter-spacing: -0.02em;
+  margin-bottom: 0.8rem;
+}
+.cta-banner p { color: rgba(255,255,255,0.65); margin-bottom: 2rem; }
+.cta-banner .btn-primary { font-size: 1rem; padding: 14px 36px; }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 4rem clamp(1rem,5vw,4rem) 2rem;
+  max-width: 1100px; margin: 0 auto;
+}
+.footer-grid {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3rem; margin-bottom: 3rem;
+}
+.footer-col h4 {
+  font-size: 0.82rem; font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 1.2rem;
+  text-transform: uppercase;
+}
+.footer-col p, .footer-col a {
+  font-size: 0.84rem; color: var(--muted);
+  line-height: 2; text-decoration: none; display: block;
+}
+.footer-col a:hover { color: var(--accent); }
+.footer-bottom {
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+  display: flex; justify-content: space-between;
+  font-size: 0.78rem; color: var(--muted);
+  flex-wrap: wrap; gap: 1rem;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 960px) {
+  .hero { grid-template-columns: 1fr; text-align: center; }
+  .hero-content { max-width: 100%; }
+  .hero-content .cta-row { justify-content: center; }
+  .hero-content .price-block { justify-content: center; }
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .steps-grid { grid-template-columns: repeat(2, 1fr); }
+  .specs-wrapper { grid-template-columns: 1fr; }
+  .reviews-grid { grid-template-columns: repeat(2, 1fr); }
+  .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+  .footer-grid { grid-template-columns: repeat(2, 1fr); }
+  .trust-bar { gap: 2rem; }
+}
+@media (max-width: 600px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .steps-grid { grid-template-columns: 1fr; }
+  .reviews-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr; }
+  nav .nav-links { gap: 1rem; }
+  nav .nav-links a { font-size: 0.78rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Announcement bar -->
+<div class="announcement">
+  🎉 新用户首单立减 <span>$15</span> &nbsp;|&nbsp; 全美免费配送 · 30天无忧退货
+</div>
+
+<!-- Navigation -->
+<nav>
+  <div class="logo">
+    <span class="icon">🐾</span> PawSmart
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">产品亮点</a></li>
+    <li><a href="#specs">规格参数</a></li>
+    <li><a href="#reviews">用户评价</a></li>
+    <li><a href="#pricing">购买</a></li>
+    <li><a href="#pricing" class="btn-primary">立即下单 →</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <div class="badge">🔥 2026 年度爆款 · 亚马逊品类 Top 10</div>
+      <h1>
+        智能自清洁猫砂盆<br>
+        <span class="highlight">CleanMate Pro</span>
+      </h1>
+      <p class="hero-desc">
+        告别手动铲屎时代。APP远程控制、紫外线杀菌、智能体重监测，
+        让你的猫咪享受五星级如厕体验，让你彻底解放双手。
+      </p>
+      <div class="price-block">
+        <span class="price">$149.99</span>
+        <span class="price-old">$199.99</span>
+        <span class="price-save">省 $50</span>
+      </div>
+      <div class="cta-row">
+        <a href="#pricing" class="btn-primary">🛒 立即购买</a>
+        <a href="#features" class="btn-outline">了解更多 ↓</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="product-img">
+        <span class="emoji">🐱</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust bar -->
+  <div class="trust-bar">
+    <div class="trust-item"><span class="ticon">⭐</span> 4.8 分 · 12,000+ 评价</div>
+    <div class="trust-item"><span class="ticon">📦</span> 全美免费配送</div>
+    <div class="trust-item"><span class="ticon">🔄</span> 30天无忧退货</div>
+    <div class="trust-item"><span class="ticon">🛡️</span> 2年质保</div>
+  </div>
+
+  <!-- ============ FEATURES ============ -->
+  <section id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="num">为什么选择 CleanMate Pro</span>
+        <h2>六大核心功能，重新定义猫咪如厕体验</h2>
+        <p>每一处细节都为猫咪的舒适和主人的便捷而设计</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="ficon">🤖</span>
+          <h3>全自动清洁</h3>
+          <p>猫咪离开后 5 分钟自动旋转筛除结团，废物密封入底部集便仓，无异味外泄。</p>
+        </div>
+        <div class="feature-card">
+          <span class="ficon">📱</span>
+          <h3>APP 远程控制</h3>
+          <p>连接 PawSmart App，实时查看如厕次数、时长、猫咪体重变化，异常行为自动预警。</p>
+        </div>
+        <div class="feature-card">
+          <span class="ficon">🦠</span>
+          <h3>UV 紫外线杀菌</h3>
+          <p>内置 UVC 灯珠，每次清洁后自动照射内仓，杀灭 99.9% 细菌，呵护猫咪健康。</p>
+        </div>
+        <div class="feature-card">
+          <span class="ficon">🔇</span>
+          <h3>超静音电机</h3>
+          <p>35dB 静音运转，比翻书声音还轻。敏感猫咪也能安心使用，夜间不扰人。</p>
+        </div>
+        <div class="feature-card">
+          <span class="ficon">⚖️</span>
+          <h3>智能体重监测</h3>
+          <p>四颗高精度传感器，准确记录每只猫咪体重，多猫家庭自动识别不同猫咪。</p>
+        </div>
+        <div class="feature-card">
+          <span class="ficon">🛡️</span>
+          <h3>多重安全防护</h3>
+          <p>红外感应 + 重力感应双重保护，猫咪靠近立即停止运转。防夹、防倾倒、防漏电。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <span class="num">简单四步</span>
+        <h2>开箱到使用，不到 5 分钟</h2>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h4>开箱安装</h4>
+          <p>取出主机，装上集便仓，插上电源</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h4>倒入猫砂</h4>
+          <p>兼容所有结团猫砂，一次加满用 2 周</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h4>连接 App</h4>
+          <p>扫码下载，Wi-Fi 配对，1 分钟搞定</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">4</div>
+          <h4>解放双手</h4>
+          <p>猫咪自动适应，废弃物只需每周倒一次</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SPECS ============ -->
+  <section id="specs">
+    <div class="container">
+      <div class="section-header">
+        <span class="num">产品规格</span>
+        <h2>CleanMate Pro 详细参数</h2>
+      </div>
+      <div class="specs-wrapper">
+        <div class="specs-image">
+          <span>📋</span>
+        </div>
+        <div class="specs-list">
+          <div class="spec-item">
+            <span class="sicon">📐</span>
+            <div>
+              <h4>尺寸 & 重量</h4>
+              <p>58 × 52 × 48 cm &nbsp;|&nbsp; 净重 9.8 kg &nbsp;|&nbsp; 适合 1.5-10kg 猫咪</p>
+            </div>
+          </div>
+          <div class="spec-item">
+            <span class="sicon">🔋</span>
+            <div>
+              <h4>电源 & 功耗</h4>
+              <p>DC 12V/2A 适配器 &nbsp;|&nbsp; 待机 0.5W · 运转 8W &nbsp;|&nbsp; 每月电费不到 $0.3</p>
+            </div>
+          </div>
+          <div class="spec-item">
+            <span class="sicon">🗑️</span>
+            <div>
+              <h4>集便仓容量</h4>
+              <p>7L 大容量密封仓 &nbsp;|&nbsp; 单猫约 7 天清理一次 &nbsp;|&nbsp; 附带降解垃圾袋 30 只</p>
+            </div>
+          </div>
+          <div class="spec-item">
+            <span class="sicon">📶</span>
+            <div>
+              <h4>连接方式</h4>
+              <p>2.4GHz Wi-Fi &nbsp;|&nbsp; 支持 iOS 15+ / Android 10+ &nbsp;|&nbsp; 离线模式也可运行</p>
+            </div>
+          </div>
+          <div class="spec-item">
+            <span class="sicon">🧪</span>
+            <div>
+              <h4>材质 & 认证</h4>
+              <p>食品级 ABS + 抗菌涂层 &nbsp;|&nbsp; FCC / CE / RoHS 认证 &nbsp;|&nbsp; 防火阻燃等级 V-0</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ REVIEWS ============ -->
+  <section id="reviews">
+    <div class="container">
+      <div class="section-header">
+        <span class="num">用户真实反馈</span>
+        <h2>12,000+ 铲屎官的一致选择</h2>
+        <p>平均评分 4.8 / 5.0</p>
+      </div>
+      <div class="reviews-grid">
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p class="review-text">
+            "养了三只猫之后每天铲屎简直是噩梦，这个猫砂盆彻底改变了我的生活。App 还能看到每只猫的上厕所记录，太实用了！"
+          </p>
+          <div class="reviewer">Sarah M.</div>
+          <div class="verified">✓ 已验证购买 · 使用 3 个月</div>
+        </div>
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p class="review-text">
+            "之前买过两个其他品牌的自动猫砂盆，不是噪音太大就是卡住。CleanMate Pro 用了两个月，零故障，而且真的很安静。"
+          </p>
+          <div class="reviewer">James K.</div>
+          <div class="verified">✓ 已验证购买 · 使用 2 个月</div>
+        </div>
+        <div class="review-card">
+          <div class="stars">★★★★★</div>
+          <p class="review-text">
+            "Vet 推荐的品牌，紫外杀菌功能让我很放心。我家猫一开始有点怕，但两天就适应了。强烈推荐给多猫家庭！"
+          </p>
+          <div class="reviewer">Emily C.</div>
+          <div class="verified">✓ 已验证购买 · 使用 5 个月</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRICING ============ -->
+  <section id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <span class="num">选择你的套餐</span>
+        <h2>限时优惠 · 现货速发</h2>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3>基础版</h3>
+          <div class="pkg-price">$149.99<span>/台</span></div>
+          <p class="pkg-desc">CleanMate Pro 主机</p>
+          <ul>
+            <li>主机 × 1</li>
+            <li>集便仓 × 1</li>
+            <li>降解垃圾袋 × 30</li>
+            <li>说明书 & 保修卡</li>
+            <li>30天退货保障</li>
+          </ul>
+          <a href="#" class="btn-outline" style="width:100%;justify-content:center;">加入购物车</a>
+        </div>
+
+        <div class="pricing-card featured">
+          <div class="popular-tag">🔥 最受欢迎</div>
+          <h3>家庭装</h3>
+          <div class="pkg-price">$179.99<span>/台</span></div>
+          <p class="pkg-desc">主机 + 配件全家桶</p>
+          <ul>
+            <li>主机 × 1</li>
+            <li>备用集便仓 × 1</li>
+            <li>降解垃圾袋 × 120（半年量）</li>
+            <li>猫砂垫 × 1（大号）</li>
+            <li>活性炭滤芯 × 4</li>
+            <li>优先客服 & 延长保修至3年</li>
+          </ul>
+          <a href="#" class="btn-primary" style="width:100%;justify-content:center;">立即购买</a>
+        </div>
+
+        <div class="pricing-card">
+          <h3>多猫家庭</h3>
+          <div class="pkg-price">$269.99<span>/2台</span></div>
+          <p class="pkg-desc">两台套装 · 性价比之选</p>
+          <ul>
+            <li>主机 × 2（每台不到 $135）</li>
+            <li>备用集便仓 × 2</li>
+            <li>降解垃圾袋 × 240（一年量）</li>
+            <li>猫砂垫 × 2（大号）</li>
+            <li>活性炭滤芯 × 8</li>
+            <li>VIP 终身技术支持</li>
+          </ul>
+          <a href="#" class="btn-primary" style="width:100%;justify-content:center;">立即购买</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <span class="num">常见问题</span>
+        <h2>你关心的，我们都想到了</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>这个猫砂盆适合多大体型的猫咪？<span class="arrow">▾</span></summary>
+          <div class="faq-answer">适合 1.5kg 到 10kg 的猫咪。内仓空间宽裕，缅因猫等大型猫也能舒适转身。如果猫咪体重低于 1.5kg（幼猫），建议使用「幼猫模式」，此时自动清洁功能会暂停，手动控制。</div>
+        </details>
+        <details class="faq-item">
+          <summary>可以使用什么类型的猫砂？<span class="arrow">▾</span></summary>
+          <div class="faq-answer">兼容所有结团型猫砂：膨润土、豆腐砂、混合砂均可。不兼容水晶砂、松木砂等非结团类猫砂。</div>
+        </details>
+        <details class="faq-item">
+          <summary>多猫家庭怎么区分不同的猫？<span class="arrow">▾</span></summary>
+          <div class="faq-answer">CleanMate Pro 内置高精度称重传感器（误差 ±10g），会根据每只猫的体重差异自动识别。你还可以在 App 中为每只猫设置名字和档案，查看各自的如厕数据。</div>
+        </details>
+        <details class="faq-item">
+          <summary>清洗维护方便吗？<span class="arrow">▾</span></summary>
+          <div class="faq-answer">内仓球体可整体取出，用水冲洗。外壳用湿布擦拭即可。建议每 2-3 个月深度清洗一次，整个过程不超过 10 分钟。</div>
+        </details>
+        <details class="faq-item">
+          <summary>退货和保修政策是怎样的？<span class="arrow">▾</span></summary>
+          <div class="faq-answer">30 天内无条件退货（即使已使用），全额退款，退货运费我们承担。标准保修期 2 年，家庭装延长至 3 年。保修期内任何非人为故障免费换新。</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA BANNER ============ -->
+  <div class="cta-banner">
+    <h2>还在犹豫？试试看，不喜欢全额退</h2>
+    <p>30 天零风险试用 · 全美包邮 · 不满意退 · 不用解释</p>
+    <a href="#pricing" class="btn-primary">🛒 立即入手 CleanMate Pro</a>
+  </div>
+
+</main>
+
+<footer>
+  <div class="footer-grid">
+    <div class="footer-col">
+      <h4>🐾 PawSmart</h4>
+      <p>让科技温暖每一次陪伴。<br>智能宠物用品领域的领先品牌，服务全球超过 50 万铲屎官。</p>
+    </div>
+    <div class="footer-col">
+      <h4>产品</h4>
+      <a href="#">CleanMate Pro</a>
+      <a href="#">智能喂食器</a>
+      <a href="#">智能饮水机</a>
+      <a href="#">所有产品</a>
+    </div>
+    <div class="footer-col">
+      <h4>支持</h4>
+      <a href="#">联系我们</a>
+      <a href="#">配送信息</a>
+      <a href="#">退换政策</a>
+      <a href="#">保修说明</a>
+    </div>
+    <div class="footer-col">
+      <h4>关注我们</h4>
+      <a href="#">Instagram</a>
+      <a href="#">TikTok</a>
+      <a href="#">YouTube</a>
+      <a href="#">Facebook</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 PawSmart Inc. All rights reserved.</span>
+    <span>Privacy Policy &nbsp;·&nbsp; Terms of Service</span>
+  </div>
+</footer>
+
+</body>
+</html>

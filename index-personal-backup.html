@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>李宇博 — 个人主页</title>
+<style>
+/* ============================================================
+   RESET & VARIABLES
+   ============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:       #08080c;
+  --surface:  #111116;
+  --text:     #e4e4e8;
+  --muted:    #7a7a88;
+  --accent:   #c9a84c;
+  --accent-dim: #8b7330;
+  --accent-glow: rgba(201,168,76,0.18);
+  --border:   rgba(255,255,255,0.05);
+  --radius:   12px;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html { scroll-behavior: auto; background: var(--bg); }
+body {
+  font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.85;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ============================================================
+   NOISE OVERLAY (animated subtle grain)
+   ============================================================ */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain-shift 0.5s steps(1) infinite;
+}
+@keyframes grain-shift {
+  0%,100% { transform: translate(0,0); }
+  25% { transform: translate(-1px,1px); }
+  50% { transform: translate(1px,-1px); }
+  75% { transform: translate(-1px,-1px); }
+}
+
+/* ============================================================
+   CUSTOM CURSOR
+   ============================================================ */
+.cursor-dot {
+  position: fixed; z-index: 10001; pointer-events: none;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+  transform: translate(-50%,-50%);
+  mix-blend-mode: difference;
+  transition: width 0.25s ease, height 0.25s ease, background-color 0.25s ease;
+}
+.cursor-ring {
+  position: fixed; z-index: 10000; pointer-events: none;
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.45);
+  transform: translate(-50%,-50%);
+  transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+}
+.cursor-dot.expanded { width: 14px; height: 14px; background: #fff; }
+.cursor-ring.expanded { width: 64px; height: 64px; border-color: rgba(255,255,255,0.6); }
+.cursor-ring.hidden { opacity: 0; }
+
+/* ============================================================
+   SCROLL PROGRESS BAR
+   ============================================================ */
+.scroll-progress {
+  position: fixed; top: 0; left: 0; height: 1.5px;
+  background: var(--accent);
+  z-index: 10002;
+  transform-origin: left;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+h1,h2,h3 { font-weight: 300; letter-spacing: 0.04em; }
+h1 { font-size: clamp(3.2rem, 8vw, 7.5rem); line-height: 1.08; }
+h2 { font-size: clamp(1.8rem, 4vw, 2.8rem); }
+p  { color: var(--muted); }
+
+.num {
+  font-family: "SF Mono","Cascadia Code","JetBrains Mono",monospace;
+  font-size: 0.7rem; color: var(--accent-dim);
+  letter-spacing: 0.2em; display: block; margin-bottom: 0.75rem;
+}
+
+/* ============================================================
+   TEXT REVEAL (clip-path)
+   ============================================================ */
+.reveal-line {
+  display: block; overflow: hidden;
+}
+.reveal-line > span {
+  display: block;
+  transform: translateY(105%);
+  transition: transform 0.9s var(--ease-out-expo);
+  will-change: transform;
+}
+.reveal-line.revealed > span { transform: translateY(0); }
+
+.reveal-fade {
+  opacity: 0; transform: translateY(28px);
+  transition: opacity 0.8s ease, transform 0.8s var(--ease-out-expo);
+  will-change: transform, opacity;
+}
+.reveal-fade.revealed { opacity: 1; transform: translateY(0); }
+
+/* Stagger support via CSS custom property */
+.stagger > * {
+  opacity: 0; transform: translateY(32px);
+  transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo);
+  transition-delay: calc(var(--stagger, 0) * 80ms);
+}
+.stagger.revealed > * { opacity: 1; transform: translateY(0); }
+
+/* ============================================================
+   FLOATING PARTICLES
+   ============================================================ */
+.particles-layer {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  overflow: hidden;
+}
+.particle {
+  position: absolute; border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  animation: particle-rise linear infinite;
+}
+@keyframes particle-rise {
+  0%   { transform: translateY(0) translateX(0) scale(0); opacity: 0; }
+  5%   { opacity: 1; }
+  20%  { transform: translateY(-15vh) translateX(10px) scale(1); opacity: 0.7; }
+  80%  { transform: translateY(-70vh) translateX(-15px) scale(0.7); opacity: 0.3; }
+  100% { transform: translateY(-100vh) translateX(0) scale(0); opacity: 0; }
+}
+
+/* ============================================================
+   BACKGROUND ORBS (parallax-responsive)
+   ============================================================ */
+.bg-orbs {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  overflow: hidden;
+}
+.bg-orbs span {
+  position: absolute; border-radius: 50%;
+  filter: blur(130px); opacity: 0.1;
+  will-change: transform;
+}
+.bg-orbs span:nth-child(1) {
+  width: 650px; height: 650px;
+  background: radial-gradient(circle,#c9a84c 0%,transparent 70%);
+  top: -250px; left: -120px;
+}
+.bg-orbs span:nth-child(2) {
+  width: 520px; height: 520px;
+  background: radial-gradient(circle,#8b5cf6 0%,transparent 70%);
+  bottom: -200px; right: -80px;
+}
+.bg-orbs span:nth-child(3) {
+  width: 380px; height: 380px;
+  background: radial-gradient(circle,#3b82f6 0%,transparent 70%);
+  top: 55%; left: 55%;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 1.5rem clamp(1rem,5vw,4rem);
+  display: flex; justify-content: space-between; align-items: center;
+  mix-blend-mode: difference;
+}
+nav .logo { font-size: 1.05rem; font-weight: 400; letter-spacing: 0.18em; color: #fff; }
+nav .nav-links { display: flex; gap: 2.8rem; list-style: none; }
+nav .nav-links a {
+  color: rgba(255,255,255,0.55); text-decoration: none;
+  font-size: 0.8rem; letter-spacing: 0.12em;
+  display: inline-block;
+  transition: color 0.35s ease;
+}
+nav .nav-links a:hover { color: #fff; }
+
+/* ============================================================
+   CONTAINER
+   ============================================================ */
+.container {
+  max-width: 1200px; margin: 0 auto;
+  padding: 0 clamp(1rem,5vw,4rem);
+  position: relative; z-index: 1;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero {
+  min-height: 100vh; display: flex; align-items: center;
+  position: relative;
+}
+.hero-content { max-width: 840px; }
+.hero .eyebrow {
+  font-size: 0.78rem; letter-spacing: 0.35em;
+  color: var(--accent); margin-bottom: 2.2rem;
+  opacity: 0; animation: fade-in-up 0.8s 0.3s forwards;
+}
+.hero h1 { margin-bottom: 1.8rem; }
+.hero h1 .line { display: block; }
+.hero h1 .line:last-child { color: rgba(255,255,255,0.22); }
+.hero .tagline {
+  font-size: 1.08rem; color: var(--muted); max-width: 500px;
+  margin-bottom: 3rem;
+}
+.hero .tagline .reveal-line > span { transition-delay: calc(var(--wi, 0) * 0.06s + 0.5s); }
+
+.scroll-hint {
+  position: absolute; bottom: 3rem; left: 0;
+  display: flex; align-items: center; gap: 0.8rem;
+  color: var(--muted); font-size: 0.7rem; letter-spacing: 0.18em;
+  opacity: 0; animation: fade-in-up 0.8s 1.2s forwards;
+}
+.scroll-hint .bar {
+  width: 55px; height: 1px; background: var(--accent-dim);
+  animation: bar-breathe 2.4s ease-in-out infinite;
+}
+@keyframes bar-breathe {
+  0%,100% { opacity: 0.4; transform: scaleX(1); }
+  50% { opacity: 1; transform: scaleX(1.35); }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   SECTION
+   ============================================================ */
+section { padding: 8.5rem 0; position: relative; z-index: 1; }
+.section-header { margin-bottom: 4.5rem; }
+.section-header h2 {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.6rem;
+}
+
+/* ============================================================
+   ABOUT
+   ============================================================ */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(2rem,8vw,6rem);
+  align-items: start;
+}
+.about-text .lead {
+  font-size: 1.15rem; color: var(--text);
+  margin-bottom: 2.2rem; line-height: 2;
+}
+.about-text p { margin-bottom: 1.1rem; }
+
+/* ---- 3D stat cards ---- */
+.about-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2.2rem 2rem;
+  transform-style: preserve-3d;
+  transition: box-shadow 0.5s ease, border-color 0.5s ease;
+  position: relative;
+}
+.stat-card .stat-num {
+  font-size: 2.6rem; font-weight: 200;
+  color: var(--accent); line-height: 1.15; margin-bottom: 0.5rem;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.stat-card .stat-label {
+  font-size: 0.78rem; color: var(--muted);
+  letter-spacing: 0.12em;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.stat-card .card-shine {
+  position: absolute; inset: 0; border-radius: var(--radius);
+  pointer-events: none;
+  background: radial-gradient(600px circle at var(--mx,50%) var(--my,50%), rgba(201,168,76,0.08), transparent 60%);
+  opacity: 0; transition: opacity 0.4s ease;
+}
+.stat-card:hover .card-shine { opacity: 1; }
+
+/* ============================================================
+   PASSIONS (3D cards)
+   ============================================================ */
+.passions-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+}
+.passion-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2.8rem 2rem;
+  transform-style: preserve-3d;
+  transition: box-shadow 0.5s ease, border-color 0.5s ease;
+  position: relative; overflow: hidden;
+}
+.passion-card .card-shine {
+  position: absolute; inset: 0; border-radius: var(--radius);
+  pointer-events: none;
+  background: radial-gradient(550px circle at var(--mx,50%) var(--my,50%), rgba(201,168,76,0.07), transparent 60%);
+  opacity: 0; transition: opacity 0.4s ease;
+}
+.passion-card:hover .card-shine { opacity: 1; }
+.passion-card .icon {
+  font-size: 2.2rem; margin-bottom: 1.5rem; display: block;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.passion-card h3 {
+  font-size: 1.1rem; margin-bottom: 0.8rem;
+  letter-spacing: 0.06em;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.passion-card p {
+  font-size: 0.88rem; line-height: 1.85;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+
+/* ============================================================
+   TIMELINE
+   ============================================================ */
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-progress {
+  position: absolute; left: 0; top: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--accent-dim), var(--accent));
+  transform-origin: top;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+.timeline-item {
+  position: relative; margin-bottom: 3.2rem; padding-left: 2rem;
+}
+.timeline-item::before {
+  content: '';
+  position: absolute; left: -2rem; top: 0.5rem;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent); z-index: 1;
+  box-shadow: 0 0 10px var(--accent-glow);
+  transition: transform 0.3s var(--ease-out-back), box-shadow 0.3s ease;
+}
+.timeline-item.active::before {
+  transform: scale(1.6);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+.timeline-item .year {
+  font-size: 0.72rem; color: var(--accent-dim);
+  letter-spacing: 0.22em; margin-bottom: 0.5rem;
+}
+.timeline-item h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.timeline-item p  { font-size: 0.88rem; }
+
+/* ============================================================
+   QUOTE
+   ============================================================ */
+.quote-block {
+  border-left: 1px solid var(--accent);
+  padding: 2rem 3rem; margin: 4.5rem 0;
+  background: var(--surface);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  transition: border-color 0.5s ease, background 0.5s ease;
+}
+.quote-block blockquote {
+  font-size: 1.35rem; font-style: italic; font-weight: 300;
+  color: var(--text); line-height: 1.9;
+}
+.quote-block .attribution {
+  margin-top: 1.2rem; font-size: 0.82rem;
+  color: var(--accent-dim); letter-spacing: 0.12em;
+}
+
+/* ============================================================
+   GALLERY
+   ============================================================ */
+.gallery-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+}
+.gallery-item {
+  aspect-ratio: 3/4;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden; position: relative;
+  border: 1px solid var(--border);
+  transform-style: preserve-3d;
+  transition: box-shadow 0.5s ease;
+}
+.gallery-item .placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.8rem;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.gallery-item .label {
+  position: absolute; bottom: 1rem; left: 1rem;
+  font-size: 0.72rem; letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.65);
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.gallery-item .gloss {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(400px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,0.04), transparent 60%);
+  opacity: 0; transition: opacity 0.4s ease;
+}
+.gallery-item:hover .gloss { opacity: 1; }
+
+/* ============================================================
+   CONTACT
+   ============================================================ */
+.contact-section { text-align: center; padding: 10rem 0 5rem; }
+.contact-section .email {
+  font-size: clamp(1.4rem,4vw,2.6rem); font-weight: 200;
+  color: var(--accent); text-decoration: none;
+  letter-spacing: 0.04em;
+  display: inline-block;
+  transition: color 0.35s ease, transform 0.35s var(--ease-out-expo);
+}
+.contact-section .email:hover { color: #e0c86e; transform: scale(1.04); }
+.social-links {
+  display: flex; justify-content: center; gap: 2.2rem;
+  margin: 2.2rem 0 4rem;
+}
+.social-links a {
+  color: var(--muted); text-decoration: none;
+  font-size: 0.82rem; letter-spacing: 0.1em;
+  display: inline-block;
+  transition: color 0.35s ease, transform 0.35s var(--ease-out-expo);
+}
+.social-links a:hover { color: var(--accent); transform: translateY(-2px); }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer {
+  text-align: center; padding: 2rem;
+  font-size: 0.72rem; color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .about-grid { grid-template-columns: 1fr; }
+  .passions-grid { grid-template-columns: 1fr 1fr; }
+  .gallery-grid { grid-template-columns: repeat(2,1fr); }
+  nav .nav-links { gap: 1.8rem; }
+}
+@media (max-width: 600px) {
+  .passions-grid { grid-template-columns: 1fr; }
+  nav .nav-links { gap: 1.2rem; }
+  nav .nav-links a { font-size: 0.72rem; }
+  .cursor-dot,.cursor-ring { display: none; }
+  body { cursor: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- Scroll progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Custom cursor -->
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Floating particles -->
+<div class="particles-layer" id="particles" aria-hidden="true"></div>
+
+<!-- Background orbs -->
+<div class="bg-orbs" aria-hidden="true">
+  <span data-parallax="0.15"></span>
+  <span data-parallax="0.25"></span>
+  <span data-parallax="0.35"></span>
+</div>
+
+<!-- Navigation -->
+<nav>
+  <div class="logo">LYB</div>
+  <ul class="nav-links">
+    <li><a href="#about" data-magnetic>关于</a></li>
+    <li><a href="#passions" data-magnetic>热爱</a></li>
+    <li><a href="#story" data-magnetic>旅程</a></li>
+    <li><a href="#contact" data-magnetic>联系</a></li>
+  </ul>
+</nav>
+
+<main>
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="home">
+    <div class="container">
+      <div class="hero-content">
+        <p class="eyebrow">PORTFOLIO &nbsp;&middot;&nbsp; 2026</p>
+        <h1>
+          <span class="line reveal-line"><span>李宇博</span></span>
+          <span class="line reveal-line"><span style="transition-delay:0.25s">Yubo Li</span></span>
+        </h1>
+        <div class="tagline">
+          <span class="reveal-line"><span style="--wi:0">十八岁的创作者，在代码与光影之间寻找秩序。</span></span>
+          <span class="reveal-line"><span style="--wi:1">相信技术表达的不只是逻辑，更是一种关于美的立场。</span></span>
+        </div>
+      </div>
+      <div class="scroll-hint">
+        <span class="bar"></span><span>滚动探索</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section id="about">
+    <div class="container">
+      <div class="section-header">
+        <span class="num reveal-fade">01</span>
+        <h2 class="reveal-line"><span>关于我</span></h2>
+      </div>
+      <div class="about-grid">
+        <div class="about-text stagger">
+          <p class="lead" style="--stagger:0">
+            2008 年生于成都，目前就读高中，同时自学编程与数字设计。
+            对世界保持饥饿感——这是我给自己的唯一要求。
+          </p>
+          <p style="--stagger:1">
+            十四岁那年第一次拆开家里的旧电脑，被主板上的电路纹理深深吸引。
+            从那以后，我开始自学编程，从 Python 到 JavaScript，从算法到前端框架，
+            一步步搭建自己的数字世界。
+          </p>
+          <p style="--stagger:2">
+            除了代码，摄影是我观察世界的另一只眼。习惯随身携带一台
+            Fujifilm 胶片机，记录街头不经意的瞬间。我相信好的照片和好的代码一样——
+            都是对复杂现实的精准裁剪。
+          </p>
+        </div>
+        <div class="about-stats stagger">
+          <div class="stat-card" style="--stagger:0" data-tilt>
+            <div class="card-shine" aria-hidden="true"></div>
+            <div class="stat-num">4</div>
+            <div class="stat-label">年代码经验</div>
+          </div>
+          <div class="stat-card" style="--stagger:1" data-tilt>
+            <div class="card-shine" aria-hidden="true"></div>
+            <div class="stat-num">12+</div>
+            <div class="stat-label">开源项目贡献</div>
+          </div>
+          <div class="stat-card" style="--stagger:2" data-tilt>
+            <div class="card-shine" aria-hidden="true"></div>
+            <div class="stat-num">&infin;</div>
+            <div class="stat-label">咖啡因摄入（升）</div>
+          </div>
+          <div class="stat-card" style="--stagger:3" data-tilt>
+            <div class="card-shine" aria-hidden="true"></div>
+            <div class="stat-num">3</div>
+            <div class="stat-label">胶片相机收藏</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PASSIONS ============ -->
+  <section id="passions">
+    <div class="container">
+      <div class="section-header">
+        <span class="num reveal-fade">02</span>
+        <h2 class="reveal-line"><span>我所热爱的</span></h2>
+      </div>
+      <div class="passions-grid stagger">
+        <div class="passion-card" style="--stagger:0" data-tilt>
+          <div class="card-shine" aria-hidden="true"></div>
+          <span class="icon">&#x2328;</span>
+          <h3>编程 &amp; 设计</h3>
+          <p>痴迷于用代码构建优雅的交互界面。TypeScript + React 是我的主力工具，也在学习 Rust 和 Swift。相信好的界面应该像空气一样——存在但不可见。</p>
+        </div>
+        <div class="passion-card" style="--stagger:1" data-tilt>
+          <div class="card-shine" aria-hidden="true"></div>
+          <span class="icon">&#x1F4F7;</span>
+          <h3>胶片摄影</h3>
+          <p>拥有一台 Fujifilm X-T3 和一台 Leica M6。喜欢拍黑白胶片，在暗房里看着影像慢慢浮现的过程，是数字世界给不了的沉静。</p>
+        </div>
+        <div class="passion-card" style="--stagger:2" data-tilt>
+          <div class="card-shine" aria-hidden="true"></div>
+          <span class="icon">&#x1F3B9;</span>
+          <h3>钢琴</h3>
+          <p>从六岁开始学琴，肖邦的夜曲是我的精神避难所。最近在练习坂本龙一的《Merry Christmas Mr. Lawrence》。</p>
+        </div>
+        <div class="passion-card" style="--stagger:3" data-tilt>
+          <div class="card-shine" aria-hidden="true"></div>
+          <span class="icon">&#x1F30C;</span>
+          <h3>天文学</h3>
+          <p>拥有一台 Celestron 望远镜。每个晴朗的夜晚，在成都郊外的山丘上观星。宇宙的尺度让我保持谦卑，也让我更加好奇。</p>
+        </div>
+        <div class="passion-card" style="--stagger:4" data-tilt>
+          <div class="card-shine" aria-hidden="true"></div>
+          <span class="icon">&#x1F4DA;</span>
+          <h3>阅读</h3>
+          <p>每年的阅读目标是 30 本书。最喜欢的作家是博尔赫斯和卡尔维诺——他们让我明白，结构本身就是一种叙事。</p>
+        </div>
+        <div class="passion-card" style="--stagger:5" data-tilt>
+          <div class="card-shine" aria-hidden="true"></div>
+          <span class="icon">&#x2615;</span>
+          <h3>咖啡</h3>
+          <p>一个认真的 home barista。手冲、意式、冷萃都有涉猎。正在探索不同产地单品豆的风味轮，最新的发现是埃塞俄比亚 Guji。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TIMELINE ============ -->
+  <section id="story">
+    <div class="container">
+      <div class="section-header">
+        <span class="num reveal-fade">03</span>
+        <h2 class="reveal-line"><span>旅程</span></h2>
+      </div>
+      <div class="timeline" id="timeline">
+        <div class="timeline-progress" id="timelineProgress"></div>
+        <div class="timeline-item">
+          <div class="year">2008</div>
+          <h3>来到这个世界</h3>
+          <p>成都，一座以悠闲和美食闻名的城市。这里的烟火气塑造了我对生活的初印象。</p>
+        </div>
+        <div class="timeline-item">
+          <div class="year">2020</div>
+          <h3>第一次接触编程</h3>
+          <p>疫情期间在家无聊，在网上找到了 Python 教程。写出第一行 Hello World 的时候，我第一次感受到创造的快乐。</p>
+        </div>
+        <div class="timeline-item">
+          <div class="year">2022</div>
+          <h3>第一个完整项目上线</h3>
+          <p>花了三个月独自完成了一个校园二手书交易平台，从数据库设计到前端交互。虽然用户只有身边的同学，但那种「有人在使用我做的东西」的感觉，难以言喻。</p>
+        </div>
+        <div class="timeline-item">
+          <div class="year">2024</div>
+          <h3>拿起相机</h3>
+          <p>父亲送了我一台二手胶片机。从那以后，我开始用取景器重新审视身边的世界。摄影让我学会了等待——等一个表情、一束光、一个恰到好处的瞬间。</p>
+        </div>
+        <div class="timeline-item">
+          <div class="year">2026</div>
+          <h3>此刻</h3>
+          <p>十八岁，站在成年的门槛上。正在准备申请大学，想学计算机科学与数字媒体艺术。对未来有期待，也有不安，但更多的是一种跃跃欲试。</p>
+        </div>
+      </div>
+
+      <div class="quote-block reveal-fade">
+        <blockquote>&#x300C;我们都在阴沟里，但仍有人仰望星空。&#x300D;</blockquote>
+        <p class="attribution">— 奥斯卡 &middot; 王尔德</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GALLERY ============ -->
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <span class="num reveal-fade">04</span>
+        <h2 class="reveal-line"><span>视觉日记</span></h2>
+      </div>
+      <div class="gallery-grid stagger">
+        <div class="gallery-item" style="--stagger:0;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)" data-tilt>
+          <span class="placeholder">&#x1F307;</span>
+          <span class="label">成都天际线</span>
+          <div class="gloss" aria-hidden="true"></div>
+        </div>
+        <div class="gallery-item" style="--stagger:1;background:linear-gradient(135deg,#2d1b3d,#4a2c5e,#1a1a2e)" data-tilt>
+          <span class="placeholder">&#x1F30C;</span>
+          <span class="label">猎户座星轨</span>
+          <div class="gloss" aria-hidden="true"></div>
+        </div>
+        <div class="gallery-item" style="--stagger:2;background:linear-gradient(135deg,#1e1e1e,#2a2a2a,#3a3a3a)" data-tilt>
+          <span class="placeholder">&#x2615;</span>
+          <span class="label">晨间手冲</span>
+          <div class="gloss" aria-hidden="true"></div>
+        </div>
+        <div class="gallery-item" style="--stagger:3;background:linear-gradient(135deg,#1a2332,#2d3e50,#1a1a2e)" data-tilt>
+          <span class="placeholder">&#x1F3B9;</span>
+          <span class="label">琴键之间</span>
+          <div class="gloss" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="contact-section" id="contact">
+    <div class="container">
+      <div class="section-header" style="text-align:left">
+        <span class="num reveal-fade">05</span>
+        <h2 class="reveal-line"><span>保持联系</span></h2>
+      </div>
+      <a href="mailto:hi@liyubo.me" class="email reveal-fade">hi@liyubo.me</a>
+      <div class="social-links reveal-fade">
+        <a href="#" data-magnetic>GitHub</a>
+        <a href="#" data-magnetic>Instagram</a>
+        <a href="#" data-magnetic>Twitter / X</a>
+        <a href="#" data-magnetic>Unsplash</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>&copy; 2026 李宇博. Designed &amp; Built with intention.</p>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+(function(){
+'use strict';
+
+/* ==========================================================
+   TOUCH / MOBILE DETECTION
+   ========================================================== */
+const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+                && !window.matchMedia('(pointer: fine)').matches;
+
+/* ==========================================================
+   DOM REFS
+   ========================================================== */
+const cursorDot   = document.getElementById('cursorDot');
+const cursorRing  = document.getElementById('cursorRing');
+const scrollBar   = document.getElementById('scrollProgress');
+const particlesEl = document.getElementById('particles');
+const timeline    = document.getElementById('timeline');
+const tlProgress  = document.getElementById('timelineProgress');
+const bgOrbs      = document.querySelectorAll('.bg-orbs span');
+
+/* ==========================================================
+   GLOBAL STATE
+   ========================================================== */
+let mx = window.innerWidth / 2;
+let my = window.innerHeight / 2;
+let ringX = mx, ringY = my;
+let scrollY = window.scrollY;
+let docH = 1, vh = 1;
+
+/* ==========================================================
+   1. CUSTOM CURSOR ENGINE
+   ========================================================== */
+const interactiveSelectors = 'a, button, [data-tilt], [data-magnetic], .stat-card, .passion-card, .gallery-item, .email';
+
+function updateCursor() {
+  if (isTouch) return;
+  const dx = mx - ringX;
+  const dy = my - ringY;
+  ringX += dx * 0.18;
+  ringY += dy * 0.18;
+  cursorDot.style.left  = mx + 'px';
+  cursorDot.style.top   = my + 'px';
+  cursorRing.style.left = ringX + 'px';
+  cursorRing.style.top  = ringY + 'px';
+}
+
+document.addEventListener('mousemove', function(e) {
+  mx = e.clientX;
+  my = e.clientY;
+
+  if (!isTouch) {
+    const target = e.target;
+    const isInteractive = target.closest(interactiveSelectors);
+    if (isInteractive) {
+      cursorDot.classList.add('expanded');
+      cursorRing.classList.add('expanded');
+    } else {
+      cursorDot.classList.remove('expanded');
+      cursorRing.classList.remove('expanded');
+    }
+  }
+});
+
+document.addEventListener('mouseleave', function() {
+  cursorRing.classList.add('hidden');
+});
+document.addEventListener('mouseenter', function() {
+  cursorRing.classList.remove('hidden');
+  ringX = mx; ringY = my;
+});
+
+/* ==========================================================
+   2. SCROLL PROGRESS & PARALLAX
+   ========================================================== */
+function updateScrollMetrics() {
+  docH = document.documentElement.scrollHeight - vh;
+  vh   = window.innerHeight;
+  if (docH <= 0) docH = 1;
+}
+
+function updateScrollLinked() {
+  // Progress bar
+  const pct = Math.min(scrollY / docH, 1);
+  scrollBar.style.transform = 'scaleX(' + pct + ')';
+
+  // Background orbs parallax
+  bgOrbs.forEach(function(orb) {
+    const speed = parseFloat(orb.getAttribute('data-parallax')) || 0.2;
+    const y = scrollY * speed;
+    orb.style.transform = 'translate3d(0,' + y + 'px,0)';
+  });
+
+  // Timeline progress
+  if (timeline && tlProgress) {
+    const rect = timeline.getBoundingClientRect();
+    const tlTop = rect.top + scrollY;
+    const tlH   = rect.height;
+    const progress = Math.max(0, Math.min(1, (scrollY + vh * 0.3 - tlTop) / (tlH * 0.7)));
+    tlProgress.style.transform = 'scaleY(' + progress + ')';
+  }
+}
+
+window.addEventListener('scroll', function() {
+  scrollY = window.scrollY;
+}, { passive: true });
+window.addEventListener('resize', updateScrollMetrics);
+
+updateScrollMetrics();
+
+/* ==========================================================
+   3. 3D TILT ENGINE
+   ========================================================== */
+function initTilt(el) {
+  if (isTouch) return;
+
+  let bounds;
+  const shineEl = el.querySelector('.card-shine, .gloss');
+
+  el.addEventListener('mouseenter', function() {
+    bounds = el.getBoundingClientRect();
+  });
+
+  el.addEventListener('mousemove', function(e) {
+    if (!bounds) bounds = el.getBoundingClientRect();
+    const rx = (e.clientX - bounds.left) / bounds.width  - 0.5;
+    const ry = (e.clientY - bounds.top)  / bounds.height - 0.5;
+
+    const maxTilt = 6;
+    const rotateY = rx * maxTilt;
+    const rotateX = -ry * maxTilt;
+
+    el.style.transform = 'perspective(900px) rotateY(' + rotateY + 'deg) rotateX(' + rotateX + 'deg) translateY(-3px)';
+
+    const shadowX = rx * 18;
+    const shadowY = ry * 18;
+    const borderAlpha = 0.08 + Math.max(Math.abs(rx), Math.abs(ry)) * 0.2;
+    el.style.boxShadow = shadowX + 'px ' + shadowY + 'px 35px rgba(0,0,0,0.55), 0 0 0 1px rgba(201,168,76,' + borderAlpha + ')';
+
+    // Shine element position
+    if (shineEl) {
+      const px = ((e.clientX - bounds.left) / bounds.width)  * 100;
+      const py = ((e.clientY - bounds.top)  / bounds.height) * 100;
+      shineEl.style.setProperty('--mx', px + '%');
+      shineEl.style.setProperty('--my', py + '%');
+    }
+  });
+
+  el.addEventListener('mouseleave', function() {
+    el.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg) translateY(0)';
+    el.style.boxShadow = '';
+    el.style.transition = 'transform 0.6s cubic-bezier(0.16,1,0.3,1), box-shadow 0.6s ease';
+    bounds = null;
+    setTimeout(function() { el.style.transition = 'box-shadow 0.5s ease'; }, 600);
+  });
+}
+
+/* ==========================================================
+   4. MAGNETIC ENGINE
+   ========================================================== */
+function initMagnetic(el) {
+  if (isTouch) return;
+  let bounds;
+
+  el.addEventListener('mouseenter', function() { bounds = el.getBoundingClientRect(); });
+
+  el.addEventListener('mousemove', function(e) {
+    if (!bounds) bounds = el.getBoundingClientRect();
+    const cx = bounds.left + bounds.width  / 2;
+    const cy = bounds.top  + bounds.height / 2;
+    const dx = (e.clientX - cx) * 0.25;
+    const dy = (e.clientY - cy) * 0.25;
+    el.style.transform = 'translate3d(' + dx + 'px,' + dy + 'px,0)';
+  });
+
+  el.addEventListener('mouseleave', function() {
+    el.style.transform = 'translate3d(0,0,0)';
+    el.style.transition = 'transform 0.55s cubic-bezier(0.16,1,0.3,1)';
+    bounds = null;
+    setTimeout(function() { el.style.transition = ''; }, 550);
+  });
+}
+
+/* ==========================================================
+   5. REVEAL ON SCROLL (Intersection Observer)
+   ========================================================== */
+const revealObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('revealed');
+      // For stagger containers, also mark children
+      if (entry.target.classList.contains('stagger')) {
+        entry.target.querySelectorAll('*').forEach(function(child) {
+          child.classList.add('revealed');
+        });
+      }
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+
+// Observe all reveal elements
+document.querySelectorAll('.reveal-line, .reveal-fade, .stagger').forEach(function(el) {
+  revealObserver.observe(el);
+});
+
+// Also observe timeline items for active state
+const tlObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('active');
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.timeline-item').forEach(function(el) {
+  tlObserver.observe(el);
+});
+
+/* ==========================================================
+   6. FLOATING PARTICLES
+   ========================================================== */
+(function initParticles() {
+  const COUNT = 35;
+  const frag = document.createDocumentFragment();
+
+  for (let i = 0; i < COUNT; i++) {
+    const p = document.createElement('div');
+    p.classList.add('particle');
+    const size = 1.2 + Math.random() * 3.5;
+    p.style.width  = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left   = Math.random() * 100 + '%';
+    p.style.top    = Math.random() * 100 + '%';
+    p.style.opacity = 0.08 + Math.random() * 0.2;
+    p.style.animationDuration = 12 + Math.random() * 28 + 's';
+    p.style.animationDelay = Math.random() * 25 + 's';
+    // Some white, mostly gold
+    if (Math.random() < 0.2) {
+      p.style.background = '#ffffff';
+    }
+    // Apply parallax speed data
+    p.setAttribute('data-speed', (0.1 + Math.random() * 0.25).toString());
+    frag.appendChild(p);
+  }
+  particlesEl.appendChild(frag);
+})();
+
+/* ==========================================================
+   7. SMOOTH ANCHOR SCROLL
+   ========================================================== */
+document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+  anchor.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (!target) return;
+
+    const start = window.scrollY;
+    const end   = target.getBoundingClientRect().top + start;
+    const duration = 900;
+    const startTime = performance.now();
+
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function animate(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = easeInOutCubic(progress);
+      window.scrollTo(0, start + (end - start) * eased);
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  });
+});
+
+/* ==========================================================
+   8. INIT ALL INTERACTIVE ELEMENTS
+   ========================================================== */
+document.querySelectorAll('[data-tilt]').forEach(initTilt);
+document.querySelectorAll('[data-magnetic]').forEach(initMagnetic);
+
+// Also make stat cards tilt-responsive
+document.querySelectorAll('.stat-card').forEach(function(card) {
+  if (!card.hasAttribute('data-tilt')) {
+    card.setAttribute('data-tilt', '');
+    initTilt(card);
+  }
+});
+
+/* ==========================================================
+   9. MAIN LOOP (rAF)
+   ========================================================== */
+function loop() {
+  updateCursor();
+  // Throttle scroll reads to every other frame
+  if (Math.floor(performance.now() / 32) !== Math.floor((performance.now() - 16) / 32)) {
+    updateScrollLinked();
+  }
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+
+/* ==========================================================
+   10. TRIGGER HERO REVEAL ON LOAD
+   ========================================================== */
+setTimeout(function() {
+  document.querySelectorAll('.hero .reveal-line').forEach(function(el) {
+    el.classList.add('revealed');
+  });
+}, 150);
+
+})();
+</script>
+</body>
+</html>

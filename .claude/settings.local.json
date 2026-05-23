@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(start \"\" \"c:\\\\Users\\\\AcGst\\\\liyubo-portfolio\\\\index.html\")",
+      "Bash(ls \"c:/Users/AcGst/.claude/projects/c--Users-AcGst-liyubo-portfolio/memory/\" 2>/dev/null || echo \"No memory directory exists yet\")",
+      "Read(//c/Users/AcGst/.claude/projects/c--Users-AcGst-liyubo-portfolio/memory/**)",
+      "Read(//c/Users/AcGst/git-test/**)",
+      "Bash(cat test.txt)",
+      "Bash(cat text.txt)",
+      "Bash(type text.txt)",
+      "Bash(gh api *)"
+    ]
+  }
+}
