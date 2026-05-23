@@ -573,6 +573,39 @@ section { padding: 5rem clamp(1rem,4vw,2rem); position: relative; z-index: 1; }
 .mood-picker .mood-option:hover { transform: scale(1.15); background: var(--rose-light); }
 .mood-picker .mood-option.selected { border-color: var(--rose); background: var(--rose-light); }
 
+/* Image upload */
+.image-upload-area {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  background: var(--bg);
+  position: relative;
+  min-height: 120px;
+  display: flex; align-items: center; justify-content: center;
+}
+.image-upload-area:hover { border-color: var(--rose); background: var(--rose-light); }
+.image-upload-area.drag-over { border-color: var(--rose-deep); background: var(--rose-light); }
+.upload-placeholder { color: var(--muted); }
+.upload-placeholder .upload-icon { font-size: 2rem; display: block; margin-bottom: 0.4rem; }
+.upload-placeholder span { display: block; font-size: 0.82rem; line-height: 1.6; }
+.upload-placeholder .upload-hint { font-size: 0.72rem; color: var(--muted); opacity: 0.7; }
+.upload-preview { position: relative; }
+.upload-preview img { max-width: 100%; max-height: 200px; border-radius: var(--radius-xs); object-fit: cover; }
+.clear-image-btn {
+  position: absolute; top: -6px; right: -6px;
+  background: var(--rose-deep); color: #fff;
+  border: none; padding: 4px 10px; border-radius: 100px;
+  font-size: 0.7rem; cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  font-family: inherit;
+}
+.clear-image-btn:hover { transform: scale(1.08); box-shadow: 0 2px 12px rgba(168,85,85,0.4); }
+.image-url-row { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.6rem; }
+.or-divider { font-size: 0.74rem; color: var(--muted); white-space: nowrap; }
+
 .form-actions {
   display: flex; gap: 0.8rem; justify-content: flex-end; margin-top: 1.5rem;
 }
@@ -874,8 +907,23 @@ footer .footer-heart { color: var(--rose); }
         <input type="text" id="inputImageEmoji" placeholder="比如：🌅" maxlength="10">
       </div>
       <div class="form-group">
-        <label>图片链接（可选）</label>
-        <input type="url" id="inputImageUrl" placeholder="https://...">
+        <label>📷 上传照片</label>
+        <div class="image-upload-area" id="imageUploadArea">
+          <div class="upload-placeholder" id="uploadPlaceholder">
+            <span class="upload-icon">📁</span>
+            <span>点击上传或拖拽照片到此处</span>
+            <span class="upload-hint">手机拍的照片可以直接上传</span>
+          </div>
+          <div class="upload-preview" id="uploadPreview" style="display:none">
+            <img id="uploadPreviewImg" src="" alt="预览">
+            <button type="button" class="clear-image-btn" id="clearImageBtn">✕ 移除</button>
+          </div>
+          <input type="file" id="inputImageFile" accept="image/*" style="display:none">
+        </div>
+        <div class="image-url-row">
+          <span class="or-divider">或者</span>
+          <input type="url" id="inputImageUrl" placeholder="粘贴图片链接 https://..." style="flex:1">
+        </div>
       </div>
       <div class="form-group">
         <label class="checkbox-row">
@@ -1297,10 +1345,106 @@ function closeModal(overlayId) {
   document.body.style.overflow = '';
 }
 
+// Image upload handling
+let pendingImageBase64 = '';
+
+function resetImageUpload() {
+  pendingImageBase64 = '';
+  $('#uploadPreview').style.display = 'none';
+  $('#uploadPlaceholder').style.display = '';
+  $('#inputImageFile').value = '';
+  $('#inputImageUrl').value = '';
+}
+
+function handleImageFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    showToast('请选择图片文件');
+    return;
+  }
+  // Compress large images (> 2MB) before storing
+  if (file.size > 2 * 1024 * 1024) {
+    compressImage(file, (dataUrl) => {
+      pendingImageBase64 = dataUrl;
+      showPreview(dataUrl);
+    });
+  } else {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      pendingImageBase64 = e.target.result;
+      showPreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function compressImage(file, callback) {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = function() {
+    URL.revokeObjectURL(url);
+    const canvas = document.createElement('canvas');
+    const maxW = 1200;
+    const maxH = 1200;
+    let w = img.width;
+    let h = img.height;
+    if (w > maxW || h > maxH) {
+      const ratio = Math.min(maxW / w, maxH / h);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+    }
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', 0.85));
+  };
+  img.src = url;
+}
+
+function showPreview(dataUrl) {
+  $('#uploadPreviewImg').src = dataUrl;
+  $('#uploadPreview').style.display = 'block';
+  $('#uploadPlaceholder').style.display = 'none';
+}
+
+// Upload area events
+$('#imageUploadArea').addEventListener('click', function(e) {
+  if (e.target.closest('#clearImageBtn')) return;
+  $('#inputImageFile').click();
+});
+$('#imageUploadArea').addEventListener('dragover', function(e) {
+  e.preventDefault();
+  this.classList.add('drag-over');
+});
+$('#imageUploadArea').addEventListener('dragleave', function() {
+  this.classList.remove('drag-over');
+});
+$('#imageUploadArea').addEventListener('drop', function(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleImageFile(file);
+});
+$('#inputImageFile').addEventListener('change', function() {
+  if (this.files[0]) handleImageFile(this.files[0]);
+});
+$('#clearImageBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  resetImageUpload();
+});
+
+// Clear uploaded image when user types a URL
+$('#inputImageUrl').addEventListener('input', function() {
+  if (this.value.trim() && pendingImageBase64) {
+    resetImageUpload();
+  }
+});
+
 // ADD modal
 $('#fabAdd').addEventListener('click', () => {
   $('#editId').value = '';
   $('#memoryForm').reset();
+  resetImageUpload();
   $('#modalTitle').textContent = '记录美好瞬间';
   $('#inputDate').value = new Date().toISOString().slice(0, 10);
   $('#inputMilestone').checked = false;
@@ -1339,7 +1483,7 @@ $('#memoryForm').addEventListener('submit', function(e) {
     mood: selectedMood ? selectedMood.dataset.mood : '😍',
     category: $('#inputCategory').value,
     imageEmoji: $('#inputImageEmoji').value.trim(),
-    imageUrl: $('#inputImageUrl').value.trim(),
+    imageUrl: pendingImageBase64 || $('#inputImageUrl').value.trim(),
     isMilestone: $('#inputMilestone').checked,
     createdAt: id ? (appData.memories.find(m => m.id === id)?.createdAt || Date.now()) : Date.now()
   };
@@ -1404,8 +1548,17 @@ function openEditModal(id) {
   $('#inputContent').value = m.content || '';
   $('#inputCategory').value = m.category || 'daily';
   $('#inputImageEmoji').value = m.imageEmoji || '';
-  $('#inputImageUrl').value = m.imageUrl || '';
+  $('#inputImageUrl').value = m.imageUrl && !m.imageUrl.startsWith('data:') ? m.imageUrl : '';
   $('#inputMilestone').checked = !!m.isMilestone;
+
+  // Handle existing image
+  resetImageUpload();
+  if (m.imageUrl) {
+    pendingImageBase64 = m.imageUrl.startsWith('data:') ? m.imageUrl : '';
+    if (m.imageUrl.startsWith('data:')) {
+      showPreview(m.imageUrl);
+    }
+  }
 
   // Set mood
   $$('#moodPicker .mood-option').forEach(b => {
